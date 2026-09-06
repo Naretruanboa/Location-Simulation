@@ -49,6 +49,34 @@ GPS_PROVIDER=mock uvicorn app:app --host 127.0.0.1 --port 8000 --ws-max-size 409
 
 ใช้ **worker เดียว** เท่านั้น เพราะ developer session, movement worker และ WebSocket state อยู่ใน process เดียว ไม่ใช้ `--workers 2` ขึ้นไป และไม่ใช้ `--reload` กับ device จริงที่กำลัง simulation
 
+## BlueStacks 5 บน Windows
+
+เปิด BlueStacks แล้วไปที่ **Settings → Advanced → Android Debug Bridge**, เปิด ADB และจดพอร์ตที่แสดง (ตัวอย่างทั่วไปคือ `5555`) จากนั้นตั้ง `.env` ดังนี้:
+
+```env
+GPS_PROVIDER=android
+ADB_PATH=C:/Program Files/BlueStacks_nxt/HD-Adb.exe
+ADB_ENDPOINTS=127.0.0.1:5555
+```
+
+เปิด PowerShell ในโฟลเดอร์โปรเจกต์แล้วรัน:
+
+```powershell
+.\scripts\windows\install.ps1
+.\scripts\windows\start.ps1
+.\scripts\windows\status.ps1
+.\scripts\windows\stop.ps1
+```
+
+ตรวจ ADB แยกต่างหากได้ด้วย:
+
+```powershell
+& "C:\Program Files\BlueStacks_nxt\HD-Adb.exe" connect 127.0.0.1:5555
+& "C:\Program Files\BlueStacks_nxt\HD-Adb.exe" devices -l
+```
+
+หาก PowerShell ไม่อนุญาตให้รัน script ให้ใช้ `Set-ExecutionPolicy -Scope Process Bypass` ในหน้าต่าง PowerShell นั้นก่อน แล้วรันคำสั่งข้างต้นใหม่
+
 ## เชื่อมต่อ iPhone จริง
 
 1. ต่อ iPhone ด้วยสาย USB ที่ส่งข้อมูลได้ ปลดล็อกหน้าจอ
