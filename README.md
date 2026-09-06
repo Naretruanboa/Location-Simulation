@@ -65,7 +65,14 @@ ADB_ENDPOINTS=127.0.0.1:5555
 .\scripts\windows\install.ps1
 .\scripts\windows\start.ps1
 .\scripts\windows\status.ps1
+.\scripts\windows\logs.ps1
 .\scripts\windows\stop.ps1
+```
+
+ติดตาม log แบบสดได้ด้วย:
+
+```powershell
+.\scripts\windows\logs.ps1 -Follow
 ```
 
 ตรวจ ADB แยกต่างหากได้ด้วย:
