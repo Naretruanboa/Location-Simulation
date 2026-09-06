@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Device GPS · Location Studio</title>
+    <link rel="stylesheet" href="/static/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/app.css" />
+  </head>
+  <body>
+    <aside id="sidebar">
+      <button
+        id="sidebar-toggle"
+        class="sidebar-toggle"
+        type="button"
+        aria-label="Collapse sidebar"
+        aria-expanded="true"
+        title="Collapse sidebar"
+      >
+        ‹
+      </button>
+      <a class="brand" href="/"
+        >⌖ <span>Location Studio<small>iPHONE GPS CONTROLLER</small></span></a
+      >
+      <div class="workspace-label">
+        WORKSPACE <span id="provider">LOCAL</span>
+      </div>
+      <nav aria-label="Modes">
+        <button class="active" data-mode="teleport">
+          ↗ <span>Teleport</span><kbd>01</kbd></button
+        ><button data-mode="joystick">
+          ✥ <span>Joystick</span><kbd>02</kbd></button
+        ><button data-mode="two">⌁ <span>Two Spot</span><kbd>03</kbd></button
+        ><button data-mode="route">
+          ♧ <span>Multi Spot</span><kbd>04</kbd></button
+        ><button data-mode="gpx">⇧ <span>Import GPX</span></button
+        ><button data-mode="favorites">☆ <span>Favorites</span></button
+        ><button data-mode="history">◷ <span>History</span></button
+        ><button data-mode="device">▣ <span>Device</span></button>
+      </nav>
+      <section class="device-card">
+        <div class="eyebrow">DEVICE CONNECTION <i id="device-dot"></i></div>
+        <h3 id="device-name">No device selected</h3>
+        <p id="device-status">Connect a device to get started</p>
+        <select id="devices" aria-label="Select device">
+          <option value="">Scanning devices…</option>
+        </select>
+        <div class="row">
+          <button id="connect">Connect</button
+          ><button id="refresh" class="quiet">↻ Refresh</button>
+        </div>
+        <dl>
+          <dt>OS</dt>
+          <dd id="ios">—</dd>
+          <dt>Connection</dt>
+          <dd id="transport">—</dd>
+          <dt>Developer Mode</dt>
+          <dd id="developer">—</dd>
+        </dl>
+        <p id="udid" class="mono muted"></p>
+        <button id="disconnect" class="quiet wide">Disconnect device</button>
+      </section>
+      <div class="sidebar-bottom">
+        <span class="local-dot"></span> Runs locally on your Mac<small
+          >Developer Location Simulation</small
+        >
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <div class="eyebrow">LOCATION WORKSPACE</div>
+          <h1 id="mode-title">Teleport</h1>
+        </div>
+        <span id="socket-status" class="badge">Connecting…</span
+        ><button id="restore" class="restore">↶ Restore Real Location</button>
+      </header>
+      <div class="map-shell">
+        <div id="map" aria-label="Interactive location map"></div>
+        <form id="search-form" class="search">
+          <span>⌕</span
+          ><input
+            id="search"
+            aria-label="Search coordinates"
+            placeholder="Search coordinates, e.g. 13.7563, 100.5018"
+            autocomplete="off"
+          /><button>Go ↵</button>
+        </form>
+        <div id="search-results" class="search-results" hidden></div>
+        <div class="map-tag">
+          ◎ <span id="simulation-label">Simulation inactive</span>
+        </div>
+        <section id="panel" class="floating-panel">
+          <button
+            id="panel-toggle"
+            class="floating-panel-toggle"
+            type="button"
+            aria-label="Collapse control panel"
+            aria-expanded="true"
+            title="Collapse control panel"
+          >
+            −
+          </button>
+          <div class="eyebrow" id="panel-label">SET A DESTINATION</div>
+          <h2 id="panel-title">Your next location.</h2>
+          <p id="mode-help">
+            Click anywhere on the map or enter coordinates to choose a
+            destination.
+          </p>
+          <div id="destination-display" class="coordinate-preview">
+            No destination selected
+          </div>
+          <div class="row">
+            <button id="teleport" data-control class="primary">
+              Teleport here ↗</button
+            ><button
+              id="favorite"
+              title="Save destination"
+              aria-label="Save destination"
+            >
+              ☆
+            </button>
+          </div>
+          <div id="route-controls" hidden>
+            <button id="use-current">Use controlled location as point A</button>
+            <p>Choose a destination, then Add destination for each point. Start moves to point A and follows straight segments. Changes apply on the next Start.</p>
+            <div id="route-summary">0 waypoints</div>
+            <ol id="waypoints"></ol>
+            <div class="row">
+              <button id="add-waypoint">+ Add destination</button
+              ><button id="clear-route" class="quiet">Clear</button>
+            </div>
+            <label class="loop-label"
+              >Repeat
+              <select id="loops">
+                <option value="1">1 time</option>
+                <option value="2">2 times</option>
+                <option value="3">3 times</option>
+                <option value="0">Infinite</option>
+              </select></label
+            >
+            <p class="muted">
+              Start sets the device to point A. Repeats travel back to A.
+            </p>
+            <button id="start-route" data-control class="primary wide">
+              Start route
+            </button>
+            <div class="row">
+              <button id="pause-route" data-control>Pause</button
+              ><button id="resume-route" data-control>Resume</button
+              ><button id="stop-route" data-control>Stop</button>
+            </div>
+            <p id="route-status">Ready to plan</p>
+          </div>
+          <div id="gpx-controls" hidden>
+            <label class="upload"
+              >Choose a GPX file<input
+                id="gpx-file"
+                type="file"
+                accept=".gpx,application/gpx+xml"
+            /></label>
+          </div>
+          <div id="saved-list"></div>
+        </section>
+        <div class="map-actions">
+          <button
+            id="locate-mac"
+            aria-label="Use this Mac's current location"
+            title="Use this Mac's current location (not iPhone GPS)"
+          >
+            ◎
+          </button>
+          <button
+            id="center"
+            aria-label="Center current location"
+            title="Center current location"
+          >
+            ⌖
+          </button>
+        </div>
+        <section class="joystick-card">
+          <span class="eyebrow">MANUAL CONTROL</span>
+          <div
+            id="joystick"
+            tabindex="0"
+            role="application"
+            aria-label="Joystick: drag or use WASD and arrow keys"
+          >
+            <span class="north">N</span><span class="east">E</span
+            ><span class="south">S</span><span class="west">W</span>
+            <div class="crosshair"></div>
+            <div id="stick">✥</div>
+          </div>
+          <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys</p>
+        </section>
+      </div>
+      <footer>
+        <div><span>LATITUDE</span><strong id="latitude">—</strong></div>
+        <div><span>LONGITUDE</span><strong id="longitude">—</strong></div>
+        <div><span>BEARING</span><strong id="bearing">0°</strong></div>
+        <div><span>MOVEMENT</span><strong id="movement">Idle</strong></div>
+        <section class="movement-card">
+          <div class="row">
+            <div class="eyebrow">MOVEMENT SPEED</div>
+            <strong id="speed-value">5.0 <small>km/h</small></strong>
+          </div>
+          <div class="presets">
+            <button data-speed="5" class="selected">Walk</button
+            ><button data-speed="10">Run</button
+            ><button data-speed="15">Bike</button
+            ><button id="custom-speed">Custom</button>
+          </div>
+          <input
+            id="speed"
+            aria-label="Movement speed in km/h"
+            type="range"
+            min="0.1"
+            max="50"
+            step="0.1"
+            value="5"
+          />
+          <div class="range-label">
+            <span>0.1 km/h</span><span id="mps">1.39 m/s</span
+            ><span>50 km/h</span>
+          </div>
+        </section>
+        <div class="footer-note">
+          <i></i> <span id="footer-status">Ready when you are</span>
+        </div>
+      </footer>
+    </main>
+    <div id="toasts" role="status" aria-live="polite"></div>
+    <script src="/static/vendor/leaflet.js"></script>
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,113 @@
+export class LocationMap {
+  constructor(onSelect, actions, toast) {
+    this.onSelect = onSelect;
+    this.actions = actions;
+    if (!window.L) {
+      toast("Map library unavailable. You can still enter coordinates.");
+      return;
+    }
+    this.map = L.map("map", { zoomControl: false }).setView(
+      [13.7563, 100.5018],
+      14,
+    );
+    L.control.zoom({ position: "topright" }).addTo(this.map);
+    let warned = false;
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    })
+      .on("tileerror", () => {
+        if (!warned) {
+          warned = true;
+          toast(
+            "Map tiles unavailable. Check your internet connection; coordinate controls still work.",
+          );
+        }
+      })
+      .addTo(this.map);
+    this.map.on("click", (e) =>
+      this.select({ latitude: e.latlng.lat, longitude: e.latlng.lng }),
+    );
+  }
+  select(point, pan = false) {
+    // Leaflet can expose wrapped longitudes after panning across the antimeridian.
+    point = {
+      latitude: point.latitude,
+      longitude: ((((point.longitude + 180) % 360) + 360) % 360) - 180,
+    };
+    this.onSelect(point);
+    if (!this.map) return;
+    if (this.destination) this.destination.remove();
+    this.destination = L.marker([point.latitude, point.longitude], {
+      draggable: true,
+      icon: L.divIcon({ className: "destination-pin", iconSize: [15, 15] }),
+    }).addTo(this.map);
+    this.destination.on("dragend", (e) => {
+      const p = e.target.getLatLng();
+      this.select({ latitude: p.lat, longitude: p.lng });
+    });
+    const popup = document.createElement("div");
+    const label = document.createElement("div");
+    label.textContent = `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}`;
+    popup.append(label);
+    for (const [title, action] of [
+      ["Teleport here", "teleport"],
+      ["Add to route", "route"],
+      ["Add favorite", "favorite"],
+    ]) {
+      const button = document.createElement("button");
+      button.textContent = title;
+      button.onclick = () => {
+        this.actions[action](point);
+        this.map.closePopup();
+      };
+      popup.append(button);
+    }
+    this.destination.bindPopup(popup);
+    if (pan)
+      this.map.setView(
+        [point.latitude, point.longitude],
+        Math.max(14, this.map.getZoom()),
+      );
+  }
+  update(point) {
+    if (!this.map) return;
+    if (!point || point.latitude === null) {
+      this.current?.remove();
+      this.current = null;
+      return;
+    }
+    const latlng = [point.latitude, point.longitude];
+    if (!this.current)
+      this.current = L.marker(latlng, {
+        icon: L.divIcon({ className: "current-pin", iconSize: [20, 20] }),
+      }).addTo(this.map);
+    else this.current.setLatLng(latlng);
+  }
+  route(points) {
+    if (!this.map) return;
+    this.polyline?.remove();
+    this.waypoints?.remove();
+    this.waypoints = L.layerGroup().addTo(this.map);
+    points.forEach((p, i) => {
+      L.marker([p.latitude, p.longitude], {
+        icon: L.divIcon({ className: "route-pin", html: String(i + 1), iconSize: [24, 24] }),
+      }).bindTooltip(`Waypoint ${i + 1}`).addTo(this.waypoints);
+    });
+    this.polyline = L.polyline(
+      points.map((p) => [p.latitude, p.longitude]),
+      { color: "#2c855a", weight: 3, dashArray: "7 6" },
+    ).addTo(this.map);
+  }
+  fit(points) {
+    if (this.map && points.length)
+      this.map.fitBounds(
+        points.map((p) => [p.latitude, p.longitude]),
+        { padding: [70, 70], maxZoom: 16 },
+      );
+  }
+  center() {
+    if (this.current) this.map.panTo(this.current.getLatLng());
+  }
+}
