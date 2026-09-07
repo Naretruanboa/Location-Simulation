@@ -47,6 +47,7 @@ function controls() {
     .querySelectorAll("[data-control]")
     .forEach((el) => (el.disabled = !(connected && online)));
   $("#speed").disabled = !(connected && online);
+  $("#speed-schedule").disabled = !(connected && online);
   $("#pause-route").disabled = !(connected && online && routeStatus === "running");
   $("#resume-route").disabled = !(connected && online && routeStatus === "paused");
   $("#stop-route").disabled = !(connected && online && ["running", "paused"].includes(routeStatus));
@@ -342,14 +343,53 @@ function speedDisplay(value) {
     plan.render();
   }
 }
-function changeSpeed(value) {
+const SPEED_SCHEDULES = {
+  ramp: [
+    { kmh: 3, seconds: 15 },
+    { kmh: 5, seconds: 15 },
+    { kmh: 8, seconds: 15 },
+  ],
+  steps: [
+    { kmh: 2, seconds: 10 },
+    { kmh: 6, seconds: 10 },
+  ],
+};
+let speedScheduleTimer = null;
+let speedScheduleIndex = 0;
+function cancelSpeedSchedule(resetSelection = true) {
+  clearTimeout(speedScheduleTimer);
+  speedScheduleTimer = null;
+  speedScheduleIndex = 0;
+  if (resetSelection) $("#speed-schedule").value = "off";
+  $("#speed-schedule-status").textContent = "Constant";
+}
+function changeSpeed(value, scheduled = false) {
   if (!connected || !online) {
     toast("Connect a device first");
     return;
   }
+  if (!scheduled) cancelSpeedSchedule();
   connection.send({ type: "speed", kmh: value });
   speedDisplay(value);
 }
+function runSpeedSchedulePhase() {
+  const name = $("#speed-schedule").value;
+  const phases = SPEED_SCHEDULES[name];
+  if (!phases || !connected || !online) {
+    cancelSpeedSchedule(!phases);
+    return;
+  }
+  const phase = phases[speedScheduleIndex];
+  changeSpeed(phase.kmh, true);
+  $("#speed-schedule-status").textContent =
+    `Phase ${speedScheduleIndex + 1}/${phases.length} · ${phase.seconds}s`;
+  speedScheduleIndex = (speedScheduleIndex + 1) % phases.length;
+  speedScheduleTimer = setTimeout(runSpeedSchedulePhase, phase.seconds * 1000);
+}
+$("#speed-schedule").onchange = () => {
+  cancelSpeedSchedule(false);
+  if ($("#speed-schedule").value !== "off") runSpeedSchedulePhase();
+};
 $("#speed").oninput = (e) => changeSpeed(Number(e.target.value));
 document
   .querySelectorAll("[data-speed]")
@@ -453,7 +493,10 @@ const connection = new Connection(
             ? "Disabled"
             : "Unknown";
       $("#udid").textContent = d?.udid || "";
-      if (!connected) stopJoystick();
+      if (!connected) {
+        stopJoystick();
+        cancelSpeedSchedule();
+      }
       controls();
     }
     if (message.type === "location_state") {
@@ -489,6 +532,7 @@ const connection = new Connection(
       : "Reconnecting…";
     if (!ready) {
       stopJoystick();
+      cancelSpeedSchedule();
       connected = false;
     }
     controls();

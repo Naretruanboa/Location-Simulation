@@ -198,6 +198,7 @@ async def websocket(ws: WebSocket):
                     s.require_connected()
                     if isinstance(message, Speed):
                         s.speed_kmh = message.kmh
+                        logger.info("Speed changed to %.1f km/h", message.kmh)
                     elif message.active:
                         if s.position is None:
                             raise ValueError("Teleport to a starting location first")

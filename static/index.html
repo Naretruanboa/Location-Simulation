@@ -202,6 +202,11 @@
         <section class="movement-card">
           <div class="row">
             <div class="eyebrow">MOVEMENT SPEED</div>
+            <select id="speed-schedule" aria-label="Automatic test speed schedule">
+              <option value="off">Constant</option>
+              <option value="ramp">QA Ramp · 15s</option>
+              <option value="steps">QA Steps · 10s</option>
+            </select>
             <strong id="speed-value">5.0 <small>km/h</small></strong>
           </div>
           <div class="presets">
@@ -220,7 +225,7 @@
             value="5"
           />
           <div class="range-label">
-            <span>0.1 km/h</span><span id="mps">1.39 m/s</span
+            <span>0.1 km/h</span><span><span id="mps">1.39 m/s</span> · <span id="speed-schedule-status">Constant</span></span
             ><span>50 km/h</span>
           </div>
         </section>

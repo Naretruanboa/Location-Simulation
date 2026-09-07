@@ -6,7 +6,7 @@ export class LocationMap {
       toast("Map library unavailable. You can still enter coordinates.");
       return;
     }
-    this.map = L.map("map", { zoomControl: false }).setView(
+    this.map = L.map("map", { zoomControl: false, doubleClickZoom: false }).setView(
       [13.7563, 100.5018],
       14,
     );
@@ -27,10 +27,10 @@ export class LocationMap {
       })
       .addTo(this.map);
     this.map.on("click", (e) =>
-      this.select({ latitude: e.latlng.lat, longitude: e.latlng.lng }),
+      this.select({ latitude: e.latlng.lat, longitude: e.latlng.lng }, false, true),
     );
   }
-  select(point, pan = false) {
+  select(point, pan = false, openPopup = false) {
     // Leaflet can expose wrapped longitudes after panning across the antimeridian.
     point = {
       latitude: point.latitude,
@@ -64,7 +64,8 @@ export class LocationMap {
       };
       popup.append(button);
     }
-    this.destination.bindPopup(popup);
+    this.destination.bindPopup(popup, { autoPan: false });
+    if (openPopup) this.destination.openPopup();
     if (pan)
       this.map.setView(
         [point.latitude, point.longitude],
@@ -85,15 +86,36 @@ export class LocationMap {
       }).addTo(this.map);
     else this.current.setLatLng(latlng);
   }
-  route(points) {
+  route(points, onRemove) {
     if (!this.map) return;
     this.polyline?.remove();
     this.waypoints?.remove();
     this.waypoints = L.layerGroup().addTo(this.map);
     points.forEach((p, i) => {
-      L.marker([p.latitude, p.longitude], {
-        icon: L.divIcon({ className: "route-pin", html: String(i + 1), iconSize: [24, 24] }),
-      }).bindTooltip(`Waypoint ${i + 1}`).addTo(this.waypoints);
+      const label = String(i + 1);
+      const width = label.length === 1 ? 24 : label.length === 2 ? 30 : 38;
+      const marker = L.marker([p.latitude, p.longitude], {
+        icon: L.divIcon({
+          className: "route-pin",
+          html: label,
+          iconSize: [width, 24],
+          iconAnchor: [width / 2, 12],
+        }),
+      }).bindTooltip(`Waypoint ${label} · click to manage`);
+      const popup = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = `Waypoint ${label}`;
+      const coordinates = document.createElement("div");
+      coordinates.textContent = `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Remove waypoint";
+      remove.onclick = () => {
+        this.map.closePopup();
+        onRemove?.(i);
+      };
+      popup.append(title, coordinates, remove);
+      marker.bindPopup(popup).addTo(this.waypoints);
     });
     this.polyline = L.polyline(
       points.map((p) => [p.latitude, p.longitude]),

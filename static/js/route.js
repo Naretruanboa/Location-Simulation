@@ -28,8 +28,23 @@ export class RoutePlan {
     this.points.push(coordinates);
     this.render();
   }
+  remove(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= this.points.length)
+      return;
+    this.points.splice(index, 1);
+    this.render();
+  }
+  move(index, offset) {
+    const target = index + offset;
+    if (index < 0 || target < 0 || target >= this.points.length) return;
+    [this.points[index], this.points[target]] = [
+      this.points[target],
+      this.points[index],
+    ];
+    this.render();
+  }
   render() {
-    this.map.route(this.points);
+    this.map.route(this.points, (index) => this.remove(index));
     const meters = this.points
       .slice(1)
       .reduce((sum, p, i) => sum + distance(this.points[i], p), 0);
@@ -45,6 +60,7 @@ export class RoutePlan {
     list.replaceChildren();
     this.points.slice(0, 50).forEach((p, index) => {
       const li = document.createElement("li");
+      li.value = index + 1;
       li.textContent = `${p.latitude.toFixed(5)}, ${p.longitude.toFixed(5)}`;
       for (const [label, offset] of [["↑", -1], ["↓", 1], ["Remove", 0]]) {
         const button = document.createElement("button");
@@ -53,9 +69,8 @@ export class RoutePlan {
         button.setAttribute("aria-label", `${label} waypoint ${index + 1}`);
         button.disabled = offset !== 0 && (index + offset < 0 || index + offset >= this.points.length);
         button.onclick = () => {
-          if (!offset) this.points.splice(index, 1);
-          else [this.points[index], this.points[index + offset]] = [this.points[index + offset], this.points[index]];
-          this.render();
+          if (!offset) this.remove(index);
+          else this.move(index, offset);
         };
         li.append(button);
       }

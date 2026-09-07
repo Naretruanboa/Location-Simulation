@@ -491,7 +491,7 @@ body.sidebar-collapsed .floating-panel {
   line-height: 1.8;
 }
 #waypoints {
-  padding-left: 18px;
+  padding-left: 48px;
   font:
     10px ui-monospace,
     monospace;
@@ -702,6 +702,22 @@ footer .movement-card {
 }
 footer .movement-card .presets {
   margin-top: 4px;
+}
+footer .movement-card .row {
+  gap: 8px;
+}
+footer .movement-card .eyebrow,
+footer .movement-card strong {
+  flex: 0 0 auto;
+}
+#speed-schedule {
+  flex: 1 1 125px;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 9px;
+}
+#speed-schedule-status {
+  color: var(--green);
 }
 footer .movement-card .presets button {
   padding: 5px 4px;
@@ -1006,6 +1022,8 @@ footer strong {
   }
 }
 .route-pin {
+  min-width: 24px;
+  padding: 0 4px;
   background: #2c855a;
   color: white;
   border: 2px solid white;
@@ -1013,6 +1031,8 @@ footer strong {
   text-align: center;
   line-height: 20px;
   font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 7px #0003;
 }
 #waypoints button {
   margin: 3px;
