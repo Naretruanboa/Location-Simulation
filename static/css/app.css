@@ -509,6 +509,23 @@ body.sidebar-collapsed .floating-panel {
 .loop-label select {
   font-size: 10px;
 }
+.json-import {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+}
+.json-import:hover {
+  background: #edf4ed;
+}
+.json-import input {
+  display: none;
+}
 .upload {
   display: block;
   padding: 20px 0;

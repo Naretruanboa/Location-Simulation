@@ -130,6 +130,15 @@
               <button id="add-waypoint">+ Add destination</button
               ><button id="clear-route" class="quiet">Clear</button>
             </div>
+            <div id="json-controls" class="row" hidden>
+              <button id="export-waypoints" type="button">Export JSON</button>
+              <label class="json-import"
+                >Import JSON<input
+                  id="import-waypoints"
+                  type="file"
+                  accept=".json,application/json"
+              /></label>
+            </div>
             <label class="loop-label"
               >Repeat
               <select id="loops">

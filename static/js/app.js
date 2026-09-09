@@ -133,6 +133,7 @@ function setMode(next) {
   $("#mode-title").textContent = titles[mode];
   $("#route-controls").hidden = !["two", "route", "gpx"].includes(mode);
   $("#gpx-controls").hidden = mode !== "gpx";
+  $("#json-controls").hidden = mode !== "route";
   $("#saved-list").replaceChildren();
   const help = {
     teleport:
@@ -289,6 +290,72 @@ $("#clear-route").onclick = () => {
   plan.points = [];
   plan.render();
 };
+function parseWaypointFile(payload) {
+  const points = Array.isArray(payload)
+    ? payload
+    : payload?.waypoints ?? payload?.points;
+  if (!Array.isArray(points) || points.length < 1)
+    throw new Error("JSON must contain a non-empty waypoints array");
+  if (points.length > 10000)
+    throw new Error("Maximum 10,000 waypoints");
+  return points.map((point, index) => {
+    const latitude = point?.latitude;
+    const longitude = point?.longitude;
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    )
+      throw new Error(`Invalid coordinates at waypoint ${index + 1}`);
+    return { latitude, longitude };
+  });
+}
+$("#export-waypoints").onclick = safe(() => {
+  if (!plan.points.length) throw new Error("Add at least one waypoint before exporting");
+  const payload = {
+    format: "location-studio-waypoints",
+    version: 1,
+    exported_at: new Date().toISOString(),
+    loops: Number($("#loops").value),
+    waypoints: plan.points.map(({ latitude, longitude }) => ({ latitude, longitude })),
+  };
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], {
+    type: "application/json",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `location-studio-waypoints-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
+  toast(`Exported ${plan.points.length} waypoints`);
+});
+$("#import-waypoints").onchange = safe(async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    if (file.size > 2_000_000) throw new Error("JSON must be smaller than 2 MB");
+    let payload;
+    try {
+      payload = JSON.parse(await file.text());
+    } catch {
+      throw new Error("The selected file is not valid JSON");
+    }
+    const points = parseWaypointFile(payload);
+    plan.points = points;
+    if (Number.isInteger(payload?.loops) && payload.loops >= 0 && payload.loops <= 1000)
+      $("#loops").value = String(payload.loops);
+    plan.render();
+    map.fit(points);
+    toast(`Imported ${points.length} waypoints`);
+  } finally {
+    event.target.value = "";
+  }
+});
 $("#use-current").onclick = safe(() => {
   if (!current?.simulation_active || current.latitude == null)
     throw new Error("No controlled location available. Select point A on the map first.");

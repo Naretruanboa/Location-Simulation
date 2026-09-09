@@ -1,0 +1,19 @@
+{
+  "format": "location-studio-waypoints",
+  "version": 1,
+  "loops": 1,
+  "waypoints": [
+    {
+      "latitude": 13.7563,
+      "longitude": 100.5018
+    },
+    {
+      "latitude": 13.757,
+      "longitude": 100.503
+    },
+    {
+      "latitude": 13.758,
+      "longitude": 100.5042
+    }
+  ]
+}

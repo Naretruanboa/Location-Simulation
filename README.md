@@ -154,6 +154,7 @@ GPS_PROVIDER=android python app.py
 - **Speed:** Walk 5, Run 10, Bike 15 km/h หรือ Custom/slider 0.1–50 km/h แสดง m/s ด้วย ค่า speed อยู่ใน session ของอุปกรณ์
 - **Two Spot:** เลือก A → Add destination → เลือก B → Add destination → Start route
 - **Multi Spot:** เพิ่มจุดตามลำดับ เลือกจำนวนรอบ แล้ว Start/Pause/Resume/Stop
+- **Multi Spot JSON:** ใช้ Export JSON เพื่อสำรอง waypoint และจำนวนรอบ หรือ Import JSON เพื่อแทนที่แผนปัจจุบัน รองรับสูงสุด 10,000 จุดและตรวจช่วง latitude/longitude ก่อนนำเข้า ทดลองได้ด้วย `examples/bangkok-waypoints.json`
 - **Start route จะตั้งตำแหน่งไปที่ A หนึ่งครั้ง** แล้วเคลื่อนระหว่าง waypoint ด้วย geodesic ไม่มี teleport ระหว่างจุด เมื่อวนซ้ำจะเดินจากจุดสุดท้ายกลับ A ก่อนรอบถัดไป
 - **GPX:** เลือกไฟล์ `.gpx` ไม่เกิน 2 MB ดูเส้นทางก่อนกด Start ใช้ `examples/bangkok-walk.gpx` ทดลองได้ รองรับ namespace, trkpt/rtept/wpt โดยเลือก track ก่อน route ก่อน standalone waypoints เพื่อไม่เอาจุด POI มาปน track สูงสุด 10,000 จุด
 - **Favorites:** กด ☆ ตั้งชื่อ ข้อมูลเก็บ SQLite สามารถ Teleport, วางแผน route จากตำแหน่งปัจจุบันไป favorite และ Delete
