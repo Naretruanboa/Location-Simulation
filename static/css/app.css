@@ -1070,3 +1070,71 @@ footer strong {
   padding: 4px 8px;
   font-size: 12px;
 }
+
+/* Keep the map visible; extra speed controls expand only when needed. */
+footer {
+  min-height: 76px;
+  padding: 8px 18px;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+footer > div > span {
+  margin-bottom: 3px;
+}
+footer .distance-row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 3px 8px;
+  align-items: center;
+}
+footer .distance-row > span {
+  grid-column: 1 / -1;
+  letter-spacing: 0;
+  font-size: 10px;
+}
+footer .movement-card {
+  flex: 1 1 300px;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 8px;
+}
+footer .footer-note {
+  display: none;
+}
+.speed-meta {
+  font-size: 10px;
+  margin-top: 3px;
+}
+.speed-details > summary {
+  cursor: pointer;
+  color: var(--green);
+  font-size: 11px;
+  padding: 3px 0;
+}
+.speed-details[open] > summary {
+  margin-bottom: 4px;
+}
+@media (max-width: 760px) {
+  footer {
+    min-height: 0;
+    padding: 6px 10px;
+    gap: 6px 14px;
+  }
+  footer .movement-card {
+    flex-basis: 100%;
+    padding: 3px 0;
+  }
+  footer .movement-card .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  footer .movement-card strong {
+    margin-top: 0;
+  }
+  footer .distance-row strong {
+    margin-top: 0;
+  }
+}
