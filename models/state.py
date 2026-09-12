@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 class AppState:
     provider: LocationProvider
     speed_kmh: float = 5
+    speed_schedule: str = "off"
+    speed_schedule_elapsed: float = 0
+    distance_m: float = 0
     selected_device: dict | None = None
     status: str = "DISCONNECTED"
     position: Coordinates | None = None
@@ -32,6 +35,9 @@ class AppState:
             "latitude": self.position.latitude if self.position else None,
             "longitude": self.position.longitude if self.position else None,
             "speed_kmh": self.speed_kmh,
+            "distance_m": self.distance_m,
+            "speed_schedule": self.speed_schedule,
+            "speed_schedule_elapsed": self.speed_schedule_elapsed,
             "bearing": self.bearing,
             "moving": self.moving or bool(self.route and self.route.status == "running"),
             "simulation_active": self.simulation_active,
@@ -45,6 +51,27 @@ class AppState:
             "status": self.status,
             "connected": self.status == "CONNECTED",
         }
+
+    def movement_budget(self, dt: float) -> float:
+        if self.speed_schedule != "target10k":
+            return self.speed_kmh / 3.6 * dt
+        end = min(3600.0, self.speed_schedule_elapsed + dt)
+        meters = 0.0
+        while self.speed_schedule_elapsed < end:
+            phase = int(self.speed_schedule_elapsed // 30)
+            boundary = min(end, (phase + 1) * 30)
+            # Integrate each linear ramp exactly, including ticks across a turning point.
+            start_speed = self.target_speed(self.speed_schedule_elapsed)
+            end_speed = self.target_speed(boundary)
+            meters += (start_speed + end_speed) / 2 / 3.6 * (boundary - self.speed_schedule_elapsed)
+            self.speed_schedule_elapsed = boundary
+        self.speed_kmh = self.target_speed(end)
+        return meters
+
+    @staticmethod
+    def target_speed(elapsed: float) -> float:
+        # One minute cycle: 5 -> 15 over 30 seconds, then 15 -> 5.
+        return 5.0 + (10.0 / 30.0) * (30.0 - abs(elapsed % 60.0 - 30.0))
 
     def stop(self) -> None:
         self.moving = False
@@ -73,6 +100,8 @@ class AppState:
 
     async def clear(self) -> None:
         self.stop()
+        self.speed_schedule = "off"
+        self.speed_schedule_elapsed = 0
         if self.simulation_active or self.restore_pending:
             try:
                 await asyncio.wait_for(self.provider.clear_location(), 5)

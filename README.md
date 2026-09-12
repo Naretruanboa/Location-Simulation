@@ -279,3 +279,24 @@ python tests/ui_smoke.py
 - Apple Developer Location Simulation และ pymobiledevice3 11.3.1 มีคำสั่ง set/clear แต่ไม่มี API อ่าน CLLocation จริงจาก iPhone แอปจึงแสดงพิกัดเป็น — จนกว่าจะตั้ง simulation ปุ่มตำแหน่ง Mac เป็นเพียงจุดเริ่มต้นโดยประมาณและความแม่นยำขึ้นกับ Location Services ของ macOS
 - หยุด route ไม่ได้ clear simulation; ใช้ Restore แยกต่างหาก
 - ยังไม่มี auth/ผู้ใช้หลายบัญชี เหมาะกับ local developer workstation
+
+### Automatic 10 km / 60 min speed
+
+Under **MOVEMENT SPEED**, select **10 km / 60 min · Auto** and start a route
+of at least 10 km (or use route looping). The server gradually increases speed from 5 to 15 km/h over 30 seconds,
+then decreases back to 5 over the next 30 seconds, averaging 10 km/h. The schedule counts active movement time, pauses while idle or the route
+is paused, and stops movement after 60 active minutes. A shorter route still
+ends at its endpoint. Manual speed changes cancel the schedule; restoring the
+location or switching devices resets it. Browser background timers do not control
+this mode. Device delays, disconnections, and pauses can extend wall-clock time.
+
+### Simulated distance counter
+
+MOVEMENT SPEED displays cumulative simulated movement in km and meters. It counts
+joystick movement and actual route segments, including loops, only after the
+device provider accepts the location update. Teleports and jumps to a route start
+are excluded. Pausing, stopping, restoring location, and refreshing the page retain
+the counter. Use **รีเซ็ตระยะ** to start a fresh comparison with the game; this
+does not reset the Auto speed timer. Connecting a different device or restarting
+the server starts a new counter. This is the simulator's distance, not a reading
+from the game.

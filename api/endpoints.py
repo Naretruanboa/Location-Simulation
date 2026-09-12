@@ -27,6 +27,15 @@ async def state(request: Request):
     return {"location": c.state.snapshot(), "device": c.state.device_snapshot(), "provider": c.mode}
 
 
+@router.post("/api/movement/distance/reset")
+async def reset_distance(request: Request):
+    c = controller(request)
+    async with c.state.lock:
+        c.state.distance_m = 0
+        c.broadcast()
+        return c.state.snapshot()
+
+
 @router.get("/api/search")
 async def search_places(
     request: Request,
@@ -197,7 +206,9 @@ async def websocket(ws: WebSocket):
                     s = c.state
                     s.require_connected()
                     if isinstance(message, Speed):
-                        s.speed_kmh = message.kmh
+                        s.speed_schedule = message.schedule
+                        s.speed_schedule_elapsed = 0
+                        s.speed_kmh = 5 if message.schedule == "target10k" else message.kmh
                         logger.info("Speed changed to %.1f km/h", message.kmh)
                     elif message.active:
                         if s.position is None:

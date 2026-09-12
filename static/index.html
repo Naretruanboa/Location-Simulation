@@ -209,15 +209,22 @@
         <div><span>BEARING</span><strong id="bearing">0°</strong></div>
         <div><span>MOVEMENT</span><strong id="movement">Idle</strong></div>
         <section class="movement-card">
+          <div class="row distance-row">
+            <span>ระยะสะสม (จำลอง)</span>
+            <strong id="distance-value">0.000 km · 0 m</strong>
+            <button id="reset-distance" type="button" title="เริ่มนับระยะใหม่เพื่อเทียบกับเกม">รีเซ็ตระยะ</button>
+          </div>
           <div class="row">
             <div class="eyebrow">MOVEMENT SPEED</div>
-            <select id="speed-schedule" aria-label="Automatic test speed schedule">
+            <select id="speed-schedule" aria-label="Automatic movement speed schedule">
               <option value="off">Constant</option>
               <option value="ramp">QA Ramp · 15s</option>
               <option value="steps">QA Steps · 10s</option>
+              <option value="target10k">10 km / 60 min · Auto</option>
             </select>
             <strong id="speed-value">5.0 <small>km/h</small></strong>
           </div>
+          <div class="range-label" id="target-speed-note" hidden>ค่อย ๆ เร่ง/ลด 5 ↔ 15 km/h ช่วงละ 30 วินาที · เฉลี่ย 10 km/h · นับเฉพาะเวลาเคลื่อนที่ ใช้เส้นทาง ≥10 กม. หรือวนเส้นทาง</div>
           <div class="presets">
             <button data-speed="5" class="selected">Walk</button
             ><button data-speed="10">Run</button

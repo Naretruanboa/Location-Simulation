@@ -155,3 +155,35 @@ def test_shutdown_clears_simulation(tmp_path):
         assert provider.location
     assert provider.location is None
     assert not provider.connected
+
+
+def test_target_speed_schedule_and_manual_override(client):
+    connect(client)
+    with client.websocket_connect("/ws") as ws:
+        ws.send_json({"type": "speed", "kmh": 5, "schedule": "target10k"})
+        state = receive_type(ws, "location_state", lambda s: s.get("speed_schedule") == "target10k")
+        assert state["speed_kmh"] == 5
+        assert state["speed_schedule_elapsed"] == 0
+        ws.send_json({"type": "speed", "kmh": 5})
+        state = receive_type(ws, "location_state", lambda s: s["speed_kmh"] == 5)
+        assert state["speed_schedule"] == "off"
+
+
+def test_distance_counter_excludes_teleports_and_resets_independently(client):
+    connect(client)
+    c = client.app.state.controller
+    assert client.get("/api/state").json()["location"]["distance_m"] == 0
+    c.state.distance_m = 1234.5
+    c.state.speed_schedule = "target10k"
+    c.state.speed_schedule_elapsed = 42
+    response = client.post("/api/location/set", json=POINT)
+    assert response.json()["distance_m"] == 1234.5
+    response = client.post("/api/location/clear")
+    assert response.json()["distance_m"] == 1234.5
+    c.state.speed_schedule = "target10k"
+    c.state.speed_schedule_elapsed = 42
+    response = client.post("/api/movement/distance/reset")
+    assert response.status_code == 200
+    assert response.json()["distance_m"] == 0
+    assert response.json()["speed_schedule"] == "target10k"
+    assert response.json()["speed_schedule_elapsed"] == 42

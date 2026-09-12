@@ -62,6 +62,8 @@ class Controller:
                 self.device_speeds[state.selected_device["udid"]] = state.speed_kmh
             state.speed_kmh = self.device_speeds.get(udid, self.default_speed)
             state.route = None
+            if not state.selected_device or state.selected_device["udid"] != udid:
+                state.distance_m = 0
             state.selected_device = device.copy()
             state.status = "CONNECTING"
             self.broadcast()
@@ -86,17 +88,26 @@ class Controller:
                 if s.moving and now - s.last_input > 1:
                     s.moving, s.owner = False, None
                 if s.status == "CONNECTED" and s.position:
-                    meters = s.speed_kmh / 3.6 * dt
+                    active = s.moving or bool(s.route and s.route.status == "running")
+                    meters = s.movement_budget(dt) if active else 0
                     point = None
+                    travelled = 0.0
                     if s.route and s.route.status == "running":
+                        before = s.route.travelled
                         point, s.bearing = s.route.advance(s.position, meters)
+                        travelled = s.route.travelled - before
                         if s.route.status == "completed":
                             logger.info("Route finished")
                     elif s.moving:
                         point = destination(s.position, s.bearing, meters)
+                        travelled = meters
                     if point:
                         try:
                             await s.set_position(point)
+                            s.distance_m += travelled
+                            if s.speed_schedule == "target10k" and s.speed_schedule_elapsed >= 3600:
+                                s.stop()
+                                s.speed_schedule = "off"
                         except ConnectionError as exc:
                             self.publish({"type": "error", "code": "LOCATION_FAILED", "message": str(exc)})
                 self.broadcast()

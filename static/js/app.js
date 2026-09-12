@@ -201,6 +201,10 @@ $("#disconnect").onclick = safe(async () => {
   stopJoystick();
   await api("/api/devices/disconnect", {});
 });
+$("#reset-distance").onclick = safe(async () => {
+  await api("/api/movement/distance/reset", {});
+  toast("เริ่มนับระยะใหม่แล้ว");
+});
 $("#restore").onclick = safe(async () => {
   stopJoystick();
   await api("/api/location/clear", {});
@@ -423,6 +427,7 @@ const SPEED_SCHEDULES = {
 };
 let speedScheduleTimer = null;
 let speedScheduleIndex = 0;
+let serverSpeedSchedule = "off";
 function cancelSpeedSchedule(resetSelection = true) {
   clearTimeout(speedScheduleTimer);
   speedScheduleTimer = null;
@@ -455,7 +460,12 @@ function runSpeedSchedulePhase() {
 }
 $("#speed-schedule").onchange = () => {
   cancelSpeedSchedule(false);
-  if ($("#speed-schedule").value !== "off") runSpeedSchedulePhase();
+  if ($("#speed-schedule").value === "target10k") {
+    connection.send({ type: "speed", kmh: 5, schedule: "target10k" });
+  } else {
+    connection.send({ type: "speed", kmh: Number($("#speed").value) });
+    if ($("#speed-schedule").value !== "off") runSpeedSchedulePhase();
+  }
 };
 $("#speed").oninput = (e) => changeSpeed(Number(e.target.value));
 document
@@ -582,6 +592,24 @@ const connection = new Connection(
         ? "Developer simulation active"
         : "Ready when you are";
       speedDisplay(message.speed_kmh);
+      const distance = message.distance_m || 0;
+      $("#distance-value").textContent =
+        `${(distance / 1000).toFixed(3)} km · ${Math.floor(distance).toLocaleString()} m`;
+      const targetMode = message.speed_schedule === "target10k";
+      const scheduleChanged = message.speed_schedule !== serverSpeedSchedule;
+      serverSpeedSchedule = message.speed_schedule;
+      $("#target-speed-note").hidden = !targetMode;
+      if (targetMode) {
+        clearTimeout(speedScheduleTimer);
+        if (scheduleChanged) $("#speed-schedule").value = "target10k";
+        const elapsed = Math.floor(message.speed_schedule_elapsed);
+        $("#speed-schedule-status").textContent =
+          `Auto · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} / 60:00`;
+      } else if (scheduleChanged && $("#speed-schedule").value === "target10k") {
+        cancelSpeedSchedule();
+        if (message.speed_schedule_elapsed >= 3600)
+          $("#speed-schedule-status").textContent = "Completed · 60:00";
+      }
       controls();
     }
     if (message.type === "route_state") {
@@ -598,6 +626,7 @@ const connection = new Connection(
       ? "● Live connection"
       : "Reconnecting…";
     if (!ready) {
+      serverSpeedSchedule = "off";
       stopJoystick();
       cancelSpeedSchedule();
       connected = false;
